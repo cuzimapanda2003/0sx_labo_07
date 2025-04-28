@@ -1,1 +1,0 @@
-#include "ViseurAutomatique.h"
