@@ -339,7 +339,9 @@ void analyserCommande(const String& tampon, String& commande, String& arg1, Stri
 
 
 void commande() {
-  while (Serial.available()) {
+  if(!Serial.available()){
+    return;
+  }
     String tampon = Serial.readStringUntil('\n');
 
     String commande;
@@ -379,5 +381,5 @@ void commande() {
     if (!commandeValide && tampon != "") {
       dessinX();
     }
-  }
+  
 }
