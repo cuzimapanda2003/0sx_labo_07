@@ -88,9 +88,9 @@ AccelStepper _stepper;
 float& _distance;
 
 
-float _angleMin = 0.0;
+float _angleMin = 10.0;
 
-float _angleMax = 180.0;
+float _angleMax = 170.0;
 
 int _stepsPerRev = 2048;
 
