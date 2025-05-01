@@ -7,16 +7,89 @@ ViseurAutomatique::ViseurAutomatique(int p1, int p2, int p3, int p4, float& dist
   _stepper.setAcceleration(100.0);
 }
 
-ViseurAutomatique::update() {
+void ViseurAutomatique::update() {
+  unsigned long currentTime = millis();
   switch (_etat) {
     case INACTIF:
-
+      _inactifState(currentTime);
       break;
     case SUIVI:
-
+      _suiviState(currentTime);
       break;
     case REPOS:
-
-     break;
+      _reposState(currentTime);
+      break;
   }
+  _stepper.run();
+}
+
+void ViseurAutomatique::setAngleMin(float angle) {
+  _angleMin = angle;
+}
+
+void ViseurAutomatique::setAngleMax(float angle) {
+  _angleMax = angle;
+}
+
+void ViseurAutomatique::setPasParTour(int steps) {
+  _stepsPerRev = steps;
+}
+
+void ViseurAutomatique::setDistanceMinSuivi(float distanceMin) {
+  _distanceMinSuivi = distanceMin;
+}
+
+void ViseurAutomatique::setDistanceMaxSuivi(float distanceMax) {
+  _distanceMaxSuivi = distanceMax;
+}
+float ViseurAutomatique::getAngle() const {
+  return (_stepper.currentPosition() * 360.0) / _stepsPerRev;
+}
+
+void ViseurAutomatique::activer() {
+  _etat = REPOS;
+  long center = _angleEnSteps((_angleMin + _angleMax) / 2.0);
+  _stepper.moveTo(center);
+}
+
+void ViseurAutomatique::desactiver() {
+  _etat = INACTIF;
+}
+
+const char* ViseurAutomatique::getEtatTexte() const {
+  switch (_etat) {
+    case INACTIF: return "INACTIF";
+    case SUIVI: return "SUIVI";
+    case REPOS: return "REPOS";
+    default: return "INCONNU";
+  }
+}
+
+
+void ViseurAutomatique::_inactifState(unsigned long cT) {
+  _stepper.disableOutputs();
+}
+
+void ViseurAutomatique::_suiviState(unsigned long cT) {
+  if (_distance < _distanceMinSuivi || _distance > _distanceMaxSuivi) {
+    _etat = REPOS;
+    return;
+  }
+  float ratio = (_distance - _distanceMinSuivi) / (_distanceMaxSuivi - _distanceMinSuivi);
+  float angle = _angleMin + (_angleMax - _angleMin) * (1.0 - ratio);  // inversé
+  long steps = _angleEnSteps(angle);
+  _stepper.moveTo(steps);
+}
+
+void ViseurAutomatique::_reposState(unsigned long cT) {
+  long center = _angleEnSteps((_angleMin + _angleMax) / 2.0);
+  _stepper.moveTo(center);
+  if (_distance >= _distanceMinSuivi && _distance <= _distanceMaxSuivi) {
+    _etat = SUIVI;
+  }
+}
+
+
+long ViseurAutomatique::_angleEnSteps(float angle) const {
+  return (long)(_stepsPerRev * angle / 360.0);
 }
