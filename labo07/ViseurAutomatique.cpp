@@ -6,3 +6,19 @@ ViseurAutomatique::ViseurAutomatique(int p1, int p2, int p3, int p4, float& dist
   _stepper.setMaxSpeed(500.0);
   _stepper.setAcceleration(100.0);
 }
+
+ViseurAutomatique::update(){
+    switch (_etat) {
+    case INACTIF:
+   
+      break;
+    case SUIVI:
+
+      break;
+    case REPOS:
+    
+      break;
+
+  }
+
+}
