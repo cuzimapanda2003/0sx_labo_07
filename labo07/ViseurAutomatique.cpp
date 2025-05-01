@@ -17,6 +17,6 @@ ViseurAutomatique::update() {
       break;
     case REPOS:
 
-      break;
+     break;
   }
 }
