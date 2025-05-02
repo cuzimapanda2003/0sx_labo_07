@@ -17,6 +17,7 @@
 AccelStepper myStepper(MOTOR_INTERFACE_TYPE, IN_1, IN_3, IN_2, IN_4);
 
 
+
 #define CLK_PIN 30
 #define DIN_PIN 34
 #define CS_PIN 32  // Chip Select
