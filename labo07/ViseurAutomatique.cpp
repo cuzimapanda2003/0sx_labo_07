@@ -1,4 +1,5 @@
 #include "ViseurAutomatique.h"
+#include "Arduino.h"
 
 ViseurAutomatique::ViseurAutomatique(int p1, int p2, int p3, int p4, float& distanceRef)
   : _stepper(AccelStepper::HALF4WIRE, p1, p3, p2, p4),
