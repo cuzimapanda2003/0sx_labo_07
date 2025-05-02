@@ -1,4 +1,5 @@
 #include "Alarm.h"
+#include "Arduino.h"
 
 Alarm::Alarm(int rPin, int gPin, int bPin, int buzzerPin, float* distancePtr)
   : _rPin(rPin), _gPin(gPin), _bPin(bPin), _buzzerPin(buzzerPin), _distance(distancePtr) {
@@ -42,7 +43,7 @@ void Alarm::setVariationTiming(unsigned long ms) {
 }
 
 void Alarm::setDistance(float d) {
-  _distance = d;
+  _distanceTrigger = d;
 }
 
 void Alarm::setTimeout(unsigned long ms) {
