@@ -88,6 +88,14 @@ void lcdstart() {
   delay(2000);
 }
 
+void ecranSetup() {
+  u8g2.begin();
+  u8g2.setContrast(5);
+  u8g2.setFont(u8g2_font_4x6_tr);
+  u8g2.clearBuffer();
+  u8g2.sendBuffer();
+}
+
 
 
 void setup() {
@@ -263,13 +271,7 @@ void girophareEteint() {
 }
 
 
-void ecranSetup() {
-  u8g2.begin();
-  u8g2.setContrast(5);
-  u8g2.setFont(u8g2_font_4x6_tr);
-  u8g2.clearBuffer();
-  u8g2.sendBuffer();
-}
+
 
 void verifierSymbole() {
   if (symboleActif && millis() - tempsAffichageSymbole >= 3000) {
