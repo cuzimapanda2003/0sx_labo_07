@@ -2,6 +2,8 @@
 #include <LCD_I2C.h>
 #include <U8g2lib.h>
 #include <AccelStepper.h>
+#include "Alarm.h"
+#include "ViseurAutomatique.h"
 
 #define MOTOR_INTERFACE_TYPE 4
 
