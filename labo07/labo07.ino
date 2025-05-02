@@ -5,6 +5,8 @@
 #include "Alarm.h"
 #include "ViseurAutomatique.h"
 
+
+
 #define MOTOR_INTERFACE_TYPE 4
 
 #define IN_1 31
@@ -36,6 +38,7 @@ int frequence = 1;
 
 int redPin = 6;
 int bluePin = 7;
+int greenPin = 8;
 
 LCD_I2C lcd(0x27, 16, 2);
 
@@ -48,7 +51,7 @@ enum etat_distance { ALERTE,
                      MOTEUR,
                      TROP_LOIN };
 etat_distance etatDistance = TROP_LOIN;
-int distance;
+float distance;
 int previousDistance = -1;
 
 unsigned long tempsDepuisLoin = 0;
@@ -62,8 +65,7 @@ long targetPosition = 0;
 long previousTarget = -1;
 float degree;
 
-int maxSpeed = 500;
-int maxAccel = 100;
+
 int inf = 30;
 int sup = 60;
 
@@ -74,7 +76,8 @@ unsigned long tempsAffichageSymbole = 0;
 bool symboleActif = false;
 
 
-
+Alarm alarm(redPin, greenPin, bluePin, buzzerPin, &distance);
+ViseurAutomatique viseur(IN_1, IN_3, IN_2, IN_4, distance);
 
 
 
@@ -85,25 +88,22 @@ void lcdstart() {
   delay(2000);
 }
 
+
+
 void setup() {
-  pinMode(buzzerPin, OUTPUT);
-  pinMode(redPin, OUTPUT);
-  pinMode(bluePin, OUTPUT);
-
+  alarm.setColourA(1, 0, 0);
+  alarm.setColourB(0, 0, 1);
   ecranSetup();
-
-
   Serial.begin(115200);
   lcd.begin();
   lcd.backlight();
   lcdstart();
-
-  myStepper.setMaxSpeed(maxSpeed);
-  myStepper.setAcceleration(maxAccel);
 }
 
 void loop() {
   chercherDistance();
+  alarm.update();
+  viseur.update();
   affichage();
   etatSystem();
   commande();
@@ -341,47 +341,46 @@ void analyserCommande(const String& tampon, String& commande, String& arg1, Stri
 
 
 void commande() {
-  if(!Serial.available()){
+  if (!Serial.available()) {
     return;
   }
-    String tampon = Serial.readStringUntil('\n');
+  String tampon = Serial.readStringUntil('\n');
 
-    String commande;
-    String arg1, arg2;
-    analyserCommande(tampon, commande, arg1, arg2);
+  String commande;
+  String arg1, arg2;
+  analyserCommande(tampon, commande, arg1, arg2);
 
-    bool commandeValide = false;
+  bool commandeValide = false;
 
-    if (commande == "g_dist") {
-      Serial.println(distance);
+  if (commande == "g_dist") {
+    Serial.println(distance);
+    dessinWeGood();
+    commandeValide = true;
+  } else if (commande == "cfg" && arg1 == "alm") {
+    alerte = arg2.toInt();
+    dessinWeGood();
+    commandeValide = true;
+  } else if (commande == "cfg" && arg1 == "lim_inf") {
+    if (arg2.toInt() > sup) {
+      Serial.println("erreur 🚫");
+      dessinInterdit();
+    } else {
+      inf = arg2.toInt();
       dessinWeGood();
-      commandeValide = true;
-    } else if (commande == "cfg" && arg1 == "alm") {
-      alerte = arg2.toInt();
+    }
+    commandeValide = true;
+  } else if (commande == "cfg" && arg1 == "lim_sup") {
+    if (arg2.toInt() < inf) {
+      Serial.println("erreur 🚫");
+      dessinInterdit();
+    } else {
+      sup = arg2.toInt();
       dessinWeGood();
-      commandeValide = true;
-    } else if (commande == "cfg" && arg1 == "lim_inf") {
-      if (arg2.toInt() > sup) {
-        Serial.println("erreur 🚫");
-        dessinInterdit();
-      } else {
-        inf = arg2.toInt();
-        dessinWeGood();
-      }
-      commandeValide = true;
-    } else if (commande == "cfg" && arg1 == "lim_sup") {
-      if (arg2.toInt() < inf) {
-        Serial.println("erreur 🚫");
-        dessinInterdit();
-      } else {
-        sup = arg2.toInt();
-        dessinWeGood();
-      }
-      commandeValide = true;
     }
+    commandeValide = true;
+  }
 
-    if (!commandeValide && tampon != "") {
-      dessinX();
-    }
-  
+  if (!commandeValide && tampon != "") {
+    dessinX();
+  }
 }
