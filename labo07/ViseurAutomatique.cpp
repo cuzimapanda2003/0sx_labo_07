@@ -48,8 +48,6 @@ float ViseurAutomatique::getAngle() const {
 
 void ViseurAutomatique::activer() {
   _etat = REPOS;
-  long center = _angleEnSteps((_angleMin + _angleMax) / 2.0);
-  _stepper.moveTo(center);
 }
 
 void ViseurAutomatique::desactiver() {
@@ -76,14 +74,12 @@ void ViseurAutomatique::_suiviState(unsigned long cT) {
     return;
   }
   float ratio = (_distance - _distanceMinSuivi) / (_distanceMaxSuivi - _distanceMinSuivi);
-  float angle = _angleMin + (_angleMax - _angleMin) * (1.0 - ratio);  // inversé
+  float angle = _angleMin + (_angleMax - _angleMin) * (1.0 - ratio); 
   long steps = _angleEnSteps(angle);
   _stepper.moveTo(steps);
 }
 
 void ViseurAutomatique::_reposState(unsigned long cT) {
-  long center = _angleEnSteps((_angleMin + _angleMax) / 2.0);
-  _stepper.moveTo(center);
   if (_distance >= _distanceMinSuivi && _distance <= _distanceMaxSuivi) {
     _etat = SUIVI;
   }
