@@ -5,17 +5,12 @@
 #include "Alarm.h"
 #include "ViseurAutomatique.h"
 
-
-
 #define MOTOR_INTERFACE_TYPE 4
 
 #define IN_1 31
 #define IN_2 33
 #define IN_3 35
 #define IN_4 37
-
-AccelStepper myStepper(MOTOR_INTERFACE_TYPE, IN_1, IN_3, IN_2, IN_4);
-
 
 
 #define CLK_PIN 30
@@ -44,49 +39,20 @@ LCD_I2C lcd(0x27, 16, 2);
 
 HCSR04 hc(TRIGGER_PIN, ECHO_PIN);
 
-const long interval = 100;
-
-enum etat_distance { ALERTE,
-                     TROP_PROCHE,
-                     MOTEUR,
-                     TROP_LOIN };
-etat_distance etatDistance = TROP_LOIN;
 float distance;
-int previousDistance = -1;
 
-unsigned long tempsDepuisLoin = 0;
-bool objetEstLoin = false;
-const unsigned long delaiExtinction = 3000;
-bool firstTime = true;
-int alerte = 15;
+Alarm alarm(redPin, greenPin, bluePin, buzzerPin, distance);
+ViseurAutomatique viseur(IN_1, IN_2, IN_3, IN_4, distance);
 
+int minStepper;
+int maxStepper;
 
-long targetPosition = 0;
-long previousTarget = -1;
-float degree;
-
-
-int inf = 30;
-int sup = 60;
-
-bool alarmeActive = false;
-unsigned long alarmeStartTime = 0;
+unsigned long currentTime = 0;
 
 unsigned long tempsAffichageSymbole = 0;
 bool symboleActif = false;
 
 
-Alarm alarm(redPin, greenPin, bluePin, buzzerPin, &distance);
-ViseurAutomatique viseur(IN_1, IN_3, IN_2, IN_4, distance);
-
-
-
-void lcdstart() {
-  lcd.print("2168637");
-  lcd.setCursor(0, 1);
-  lcd.print("labo5");
-  delay(2000);
-}
 
 void ecranSetup() {
   u8g2.begin();
@@ -96,182 +62,70 @@ void ecranSetup() {
   u8g2.sendBuffer();
 }
 
-
+void lcdstart() {
+  lcd.print("2168637");
+  lcd.setCursor(0, 1);
+  lcd.print("labo5");
+  delay(2000);
+}
 
 void setup() {
-  alarm.setColourA(1, 0, 0);
-  alarm.setColourB(0, 0, 1);
-  ecranSetup();
   Serial.begin(115200);
   lcd.begin();
   lcd.backlight();
+
+  minStepper = viseur.getMinStep();
+  maxStepper = viseur.getMaxStep();
+  alarm.setDistance(15);
+  alarm.setColourA(1, 0, 0);
+  alarm.setColourB(0, 0, 1);
+  viseur.setAngleMin(10);
+  viseur.setAngleMax(170);
+  alarm.turnOn();
+  viseur.activer();
+
+
+  ecranSetup();
   lcdstart();
 }
 
+
 void loop() {
+  currentTime = millis();
   chercherDistance();
+  ecranLCD(currentTime);
   alarm.update();
   viseur.update();
-  affichage();
-  etatSystem();
   commande();
-  verifierSymbole();
-  myStepper.run();
 }
 
+void ecranLCD(unsigned long time) {
+  static unsigned long lastTime = 0;
+  int rate = 100;
 
+  if (time - lastTime >= rate) {
+    lcd.setCursor(0, 0);
+    lcd.print("Dist : ");
+    lcd.print(distance);
+    lcd.print(" cm  ");
+    lcd.setCursor(0, 1);
+    lcd.print("Obj  : ");
+    lcd.print(viseur.getEtatTexte());
 
+    lastTime = time;
+  }
+}
 
 void chercherDistance() {
   static unsigned long previousMillis = 0;
   unsigned long currentMillis = millis();
+  int interval = 100;
 
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
     distance = hc.dist();
   }
 }
-
-
-void etatSystem() {
-  unsigned long currentTimes = millis();
-
-
-  if (distance <= alerte) {
-    etatDistance = ALERTE;
-
-    if (!alarmeActive) {
-      alarmeActive = true;
-      alarmeStartTime = currentTimes;
-    }
-
-    objetEstLoin = false;
-  } else if (distance > alerte && distance < inf) {
-    etatDistance = TROP_PROCHE;
-    objetEstLoin = false;
-  } else if (distance >= inf && distance <= sup) {
-    etatDistance = MOTEUR;
-    objetEstLoin = false;
-  } else {
-    etatDistance = TROP_LOIN;
-    objetEstLoin = true;
-  }
-
-  switch (etatDistance) {
-    case ALERTE:
-      tropPres();
-      break;
-    case TROP_PROCHE:
-      tropPres();
-      break;
-    case MOTEUR:
-      targetPosition = map(distance, 30, 60, 0, 1024);
-      if (targetPosition != previousTarget) {
-        myStepper.moveTo(targetPosition);
-        previousTarget = targetPosition;
-      }
-      affichageMilieu(targetPosition);
-      break;
-    case TROP_LOIN:
-      tropLoin();
-      break;
-  }
-
-
-  if (alarmeActive) {
-    if (currentTimes - alarmeStartTime <= delaiExtinction) {
-      alarme();
-      girophare();
-    } else {
-      alarmeOff();
-      girophareEteint();
-      alarmeActive = false;
-    }
-  } else {
-    alarmeOff();
-    girophareEteint();
-  }
-}
-
-
-
-
-void affichage() {
-
-  if (distance != previousDistance) {
-    lcd.setCursor(6, 0);
-    lcd.print("                ");
-    lcd.setCursor(0, 0);
-    lcd.print("dist = ");
-    lcd.setCursor(8, 0);
-    lcd.print(distance);
-
-    lcd.setCursor(6, 1);
-
-    lcd.setCursor(0, 1);
-  }
-}
-
-void affichageMilieu(long steps) {
-  degree = (steps / 2048.0) * 360.0;
-  lcd.setCursor(0, 1);
-  lcd.print("                ");
-  lcd.setCursor(0, 1);
-  lcd.print("Deg  : ");
-  lcd.print(degree, 1);
-}
-
-
-void tropLoin() {
-  lcd.setCursor(0, 1);
-  lcd.print("                ");
-  lcd.setCursor(0, 1);
-  lcd.print("obj  : trop loin");
-}
-
-
-void tropPres() {
-  lcd.setCursor(0, 1);
-  lcd.print("                ");
-  lcd.setCursor(0, 1);
-  lcd.print("obj  : trop pret");
-}
-
-
-
-void alarme() {
-  tone(buzzerPin, frequence);
-}
-void alarmeOff() {
-  noTone(buzzerPin);
-}
-void girophare() {
-  static unsigned long lastSwitchTime = 0;
-  static bool isRedOn = true;
-  unsigned long currentMillis = millis();
-
-  if (currentMillis - lastSwitchTime >= interval) {
-    lastSwitchTime = currentMillis;
-    isRedOn = !isRedOn;
-  }
-
-  if (isRedOn) {
-    digitalWrite(redPin, HIGH);
-    digitalWrite(bluePin, LOW);
-  } else {
-    digitalWrite(redPin, LOW);
-    digitalWrite(bluePin, HIGH);
-  }
-}
-
-
-void girophareEteint() {
-  digitalWrite(redPin, LOW);
-  digitalWrite(bluePin, LOW);
-}
-
-
-
 
 void verifierSymbole() {
   if (symboleActif && millis() - tempsAffichageSymbole >= 3000) {
@@ -359,24 +213,24 @@ void commande() {
     dessinWeGood();
     commandeValide = true;
   } else if (commande == "cfg" && arg1 == "alm") {
-    alerte = arg2.toInt();
+    alarm.setDistance(arg2.toInt());
     dessinWeGood();
     commandeValide = true;
   } else if (commande == "cfg" && arg1 == "lim_inf") {
-    if (arg2.toInt() > sup) {
+    if (arg2.toInt() > viseur.getDistanceMaxSuivi()) {
       Serial.println("erreur 🚫");
       dessinInterdit();
     } else {
-      inf = arg2.toInt();
+      viseur.setDistanceMinSuivi(arg2.toInt());
       dessinWeGood();
     }
     commandeValide = true;
   } else if (commande == "cfg" && arg1 == "lim_sup") {
-    if (arg2.toInt() < inf) {
+    if (arg2.toInt() < viseur.getDistanceMinSuivi()) {
       Serial.println("erreur 🚫");
       dessinInterdit();
     } else {
-      sup = arg2.toInt();
+      viseur.setDistanceMaxSuivi(arg2.toInt());
       dessinWeGood();
     }
     commandeValide = true;
@@ -386,3 +240,4 @@ void commande() {
     dessinX();
   }
 }
+
