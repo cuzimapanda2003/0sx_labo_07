@@ -65,7 +65,7 @@ void ecranSetup() {
 void lcdstart() {
   lcd.print("2168637");
   lcd.setCursor(0, 1);
-  lcd.print("labo5");
+  lcd.print("labo7");
   delay(2000);
 }
 
