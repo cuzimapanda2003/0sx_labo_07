@@ -6,6 +6,7 @@
 
 
 ViseurAutomatique::ViseurAutomatique(int p1, int p2, int p3, int p4, float& distance)
+
   : _stepper(MOTOR_INTERFACE_TYPE, p1, p3, p2, p4), _distance(distance) {
 
   _stepper.setMaxSpeed(500);
@@ -14,6 +15,7 @@ ViseurAutomatique::ViseurAutomatique(int p1, int p2, int p3, int p4, float& dist
 }
 
 void ViseurAutomatique::update() {
+
   _currentTime = millis();
 
   switch (_etat) {
@@ -31,58 +33,74 @@ void ViseurAutomatique::update() {
   _stepper.run();
 }
 void ViseurAutomatique::setAngleMin(float angle) {
+
   _angleMin = angle;
 }
 
 void ViseurAutomatique::setAngleMax(float angle) {
+
   _angleMax = angle;
 }
 
 void ViseurAutomatique::setPasParTour(int steps) {
+
   _stepsPerRev = steps;
 }
 
 void ViseurAutomatique::setDistanceMinSuivi(float distanceMin) {
+
   _distanceMinSuivi = distanceMin;
 }
 
 void ViseurAutomatique::setDistanceMaxSuivi(float distanceMax) {
+
   _distanceMaxSuivi = distanceMax;
 }
 float ViseurAutomatique::getAngle() const {
+
   float ratio = (_distance - _distanceMinSuivi) / (_distanceMaxSuivi - _distanceMinSuivi);
   return _angleMin + ratio * (_angleMax - _angleMin);
 }
 
 float ViseurAutomatique::getDistanceMinSuivi() {
+
   return _distanceMinSuivi;
 }
 
 float ViseurAutomatique::getDistanceMaxSuivi() {
+
   return _distanceMaxSuivi;
 }
 
 void ViseurAutomatique::activer() {
+
   _etat = REPOS;
 }
 
 float ViseurAutomatique::getMinStep() {
+
   return _angleMin / 360.0 * _stepsPerRev;
 }
+
 float ViseurAutomatique::getMaxStep() {
+
   return _angleMax / 360.0 * _stepsPerRev;
 }
 
 void ViseurAutomatique::desactiver() {
+
   _etat = INACTIF;
 }
+
 const char* ViseurAutomatique::getEtatTexte() const {
+
   if (_etat == INACTIF) return "INACTIF";
   else if (_etat == SUIVI) return "SUIVI";
   else if (_etat == REPOS) return "REPOS";
 }
 
 void ViseurAutomatique::_inactifState(unsigned long cT) {
+
   _stepper.disableOutputs();
 }
 void ViseurAutomatique::_suiviState(unsigned long cT) {
@@ -102,6 +120,7 @@ void ViseurAutomatique::_suiviState(unsigned long cT) {
 }
 
 void ViseurAutomatique::_reposState(unsigned long cT) {
+
   if (_distance < _distanceMinSuivi) {
     float minPosition = map(_distanceMinSuivi, _distanceMinSuivi, _distanceMaxSuivi, getMinStep(), getMaxStep());
 
@@ -124,5 +143,6 @@ void ViseurAutomatique::_reposState(unsigned long cT) {
 }
 
 long ViseurAutomatique::_angleEnSteps(float angle) const {
+
   return map(angle, _distanceMinSuivi, _distanceMaxSuivi, getMinStep(), getMaxStep());
 }
