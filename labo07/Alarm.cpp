@@ -3,6 +3,7 @@
 #include "Alarm.h"
 
 Alarm::Alarm(int rPin, int gPin, int bPin, int buzzerPin, float& distance)
+
   : _rPin(rPin), _gPin(gPin), _bPin(bPin), _buzzerPin(buzzerPin), _distance(distance) {
 
 
@@ -32,26 +33,31 @@ void Alarm::update() {
 }
 
 void Alarm::setColourA(int r, int g, int b) {
+
   _colA[0] = r;
   _colA[1] = g;
   _colA[2] = b;
 }
 
 void Alarm::setColourB(int r, int g, int b) {
+
   _colB[0] = r;
   _colB[1] = g;
   _colB[2] = b;
 }
 
 void Alarm::setDistance(float d) {
+
   _distanceTrigger = d;
 }
 
 float Alarm::getDistance() {
+
   return _distanceTrigger;
 }
 
 void Alarm::setTimeout(unsigned long ms) {
+
   _timeoutDelay = ms;
 }
 
@@ -71,16 +77,19 @@ void Alarm::test() {
 }
 
 AlarmState Alarm::getState() const {
+
   return _state;
 }
 
 void Alarm::_setRGB(int r, int g, int b) {
+
   analogWrite(_rPin, r);
   analogWrite(_gPin, g);
   analogWrite(_bPin, b);
 }
 
 void Alarm::_turnOff() {
+
   noTone(_buzzerPin);
   _setRGB(0, 0, 0);
   _state = OFF;
@@ -96,13 +105,16 @@ void Alarm::_offState() {
 }
 
 void Alarm::_watchState() {
+
   if (_distance < _distanceTrigger) {
     _state = ON;
   }
 
+
   noTone(_buzzerPin);
   _setRGB(0, 0, 0);
 }
+
 
 void Alarm::_onState() {
   bool transition = _distance >= _distanceTrigger;
@@ -116,6 +128,7 @@ void Alarm::_onState() {
     _lastDetectedTime = _currentTime;
   }
 
+
   if (_currentTime - _lastUpdate >= _variationRate) {
     _lastUpdate = _currentTime;
     _currentColor = !_currentColor;
@@ -125,10 +138,13 @@ void Alarm::_onState() {
   } else {
     _setRGB(_colA[0], _colA[1], _colA[2]);
   }
-  tone(_buzzerPin, 1000);
+  tone(_buzzerPin, 1);
 }
 
+
 void Alarm::_testingState() {
+
+
   if (_currentTime - _testStartTime >= _timeoutDelay) {
     _testStartTime = _currentTime;
     _turnOff();
