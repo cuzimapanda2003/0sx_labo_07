@@ -50,7 +50,8 @@ void ViseurAutomatique::setDistanceMaxSuivi(float distanceMax) {
   _distanceMaxSuivi = distanceMax;
 }
 float ViseurAutomatique::getAngle() const {
-  return _mapFloat(_distance, _distanceMinSuivi, _distanceMaxSuivi, _angleMin, _angleMax);
+  float ratio = (_distance - _distanceMinSuivi) / (_distanceMaxSuivi - _distanceMinSuivi);
+  return _angleMin + ratio * (_angleMax - _angleMin);
 }
 
 float ViseurAutomatique::getDistanceMinSuivi() {
@@ -85,14 +86,14 @@ void ViseurAutomatique::_inactifState(unsigned long cT) {
   _stepper.disableOutputs();
 }
 void ViseurAutomatique::_suiviState(unsigned long cT) {
-  
+
 
   if (_distance < _distanceMinSuivi || _distance > _distanceMaxSuivi) {
     _etat = REPOS;
   }
 
   int stepsToMove = _angleEnSteps(getAngle());
-  
+
 
   if (abs(_stepper.distanceToGo()) == 0.1) {
     _stepper.disableOutputs();
@@ -101,7 +102,7 @@ void ViseurAutomatique::_suiviState(unsigned long cT) {
 }
 
 void ViseurAutomatique::_reposState(unsigned long cT) {
-  if(_distance < _distanceMinSuivi) {
+  if (_distance < _distanceMinSuivi) {
     float minPosition = map(_distanceMinSuivi, _distanceMinSuivi, _distanceMaxSuivi, getMinStep(), getMaxStep());
 
     _stepper.moveTo(minPosition);
@@ -109,8 +110,7 @@ void ViseurAutomatique::_reposState(unsigned long cT) {
     if (_stepper.distanceToGo() == 0) {
       _stepper.disableOutputs();
     }
-  }
-  else if(_distance > _distanceMaxSuivi) {
+  } else if (_distance > _distanceMaxSuivi) {
     float maxPosition = map(_distanceMaxSuivi, _distanceMinSuivi, _distanceMaxSuivi, getMinStep(), getMaxStep());
 
     _stepper.moveTo(maxPosition);
@@ -118,16 +118,11 @@ void ViseurAutomatique::_reposState(unsigned long cT) {
     if (_stepper.distanceToGo() == 0) {
       _stepper.disableOutputs();
     }
-  }
-  else {
+  } else {
     _etat = SUIVI;
   }
 }
 
 long ViseurAutomatique::_angleEnSteps(float angle) const {
   return map(angle, _distanceMinSuivi, _distanceMaxSuivi, getMinStep(), getMaxStep());
-}
-
-float ViseurAutomatique::_mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
